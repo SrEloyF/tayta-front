@@ -1,0 +1,64 @@
+# Dependencies
+node_modules
+.next
+
+# Build output
+out
+.next/cache
+
+# Environment variables
+.env*.local
+.env
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+.DS_Store
+.vscode
+.idea
+*.pem
+*.p12
+*.key
+*.crt
+*.cer
+
+# Production
+build
+.next
+
+# Testing
+coverage
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Misc
+*.md
+.git
+.gitignore
+*.log
+logs
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vercel
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
