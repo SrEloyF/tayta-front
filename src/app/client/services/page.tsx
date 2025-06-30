@@ -2,7 +2,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { ProductoService } from '@/features/productos/services/ProductoService';
-import { ServiceCard } from '@/components/client/service/ServiceCard';
 import { ServiceCategoryFilter } from '@/components/client/service/ServiceCategoryFilter';
 import { Search } from 'lucide-react';
 import axios from 'axios';

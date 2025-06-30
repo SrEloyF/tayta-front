@@ -235,7 +235,7 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete }) => {
           </div>
           
           <div className="mt-auto flex gap-2">
-            <Link href={`/client/${es_servicio ? 'services' : 'products'}/ver/${producto.id_item || producto.id_producto}`} passHref>
+            <Link href={`/client/products/ver/${producto.id_item || producto.id_producto}`} passHref>
               <Button
                 variant="outline"
                 className="
