@@ -6,10 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const getToken = (): string => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('auth-token');
-    console.log("---------------------------------------------------------------------------");
-    
-    console.log(token);
-    
+
     if (!token) throw new Error('No se encontró token de autenticación');
     return token;
   }

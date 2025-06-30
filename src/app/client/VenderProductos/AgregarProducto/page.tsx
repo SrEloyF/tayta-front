@@ -40,7 +40,7 @@ export default function AgregarProducto() {
         throw new Error('Usuario no autenticado');
       }
       const token = localStorage.getItem('auth-token');
-      const res = await fetch(`/api/usuarios/${user.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/${user.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('No se pudo validar el número de cuenta');
@@ -73,7 +73,7 @@ export default function AgregarProducto() {
       uploadData.append('carpeta', 'item_imgs');
       uploadData.append('imagen', formData.imagen[0]);
 
-      const uploadRes = await fetch('/api/upload-img', {
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -102,7 +102,7 @@ export default function AgregarProducto() {
       };
 
       // 3) Crear el ítem (producto o servicio)
-      const itemResponse = await fetch('/api/items', {
+      const itemResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export default function AgregarProducto() {
           stock: stock >= 0 ? stock : 0
         };
 
-        const productoResponse = await fetch('/api/productos', {
+        const productoResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/productos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ export default function AgregarProducto() {
         throw new Error('Usuario no autenticado');
       }
       const token = localStorage.getItem('auth-token');
-      const res = await fetch('/api/usuarios/nro_cuenta', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/nro_cuenta`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ export default function AgregarProducto() {
     try {
       const token = localStorage.getItem('auth-token');
 
-      const response = await fetch('/api/categorias', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categorias`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -235,7 +235,7 @@ export default function AgregarProducto() {
       uploadData.append('carpeta', 'item_imgs');
       uploadData.append('imagen', formData.imagen[0]);
 
-      const uploadRes = await fetch('/api/upload-img', {
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -264,7 +264,7 @@ export default function AgregarProducto() {
       };
 
       // 3) Crear el ítem (producto o servicio)
-      const itemResponse = await fetch('/api/items', {
+      const itemResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +288,7 @@ export default function AgregarProducto() {
           stock: stock >= 0 ? stock : 0
         };
 
-        const productoResponse = await fetch('/api/productos', {
+        const productoResponse = await fetch(`g${process.env.NEXT_PUBLIC_API_URL}/api/productos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
