@@ -80,7 +80,7 @@ export default function DetalleProductoPage() {
       if (!token) throw new Error('No autenticado');
 
       // 1. Buscar carrito abierto (estado "E") del usuario
-      let carritoRes = await fetch(`/api/carritos/buscar`, {
+      let carritoRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/carritos/buscar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -99,7 +99,7 @@ export default function DetalleProductoPage() {
 
       // 2. Si no existe, crear uno
       if (!carrito) {
-        const crearRes = await fetch(`/api/carritos`, {
+        const crearRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/carritos`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -115,7 +115,7 @@ export default function DetalleProductoPage() {
       }
 
       // 3. Añadir producto al carrito
-      const addRes = await fetch(`/api/carritos-productos`, {
+      const addRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/carritos-productos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -193,7 +193,7 @@ export default function DetalleProductoPage() {
         setProducto(data);
 
         if (data.id_categoria) {
-          const categoriaRes = await fetch('/api/categorias/buscar', {
+          const categoriaRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categorias/buscar`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -211,7 +211,7 @@ export default function DetalleProductoPage() {
         }
 
         if (data.id_vendedor) {
-          const vendedorRes = await fetch('/api/usuarios/buscar', {
+          const vendedorRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/buscar`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
