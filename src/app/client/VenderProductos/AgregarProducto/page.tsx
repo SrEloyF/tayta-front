@@ -288,7 +288,7 @@ export default function AgregarProducto() {
           stock: stock >= 0 ? stock : 0
         };
 
-        const productoResponse = await fetch(`g${process.env.NEXT_PUBLIC_API_URL}/api/productos`, {
+        const productoResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/productos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

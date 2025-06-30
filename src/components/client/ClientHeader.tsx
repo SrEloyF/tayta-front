@@ -36,7 +36,7 @@ export function ClientHeader() {
       }
       try {
         const token = localStorage.getItem('auth-token');
-        const carritoRes = await fetch(`g${process.env.NEXT_PUBLIC_API_URL}/api/carritos/buscar`, {
+        const carritoRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/carritos/buscar`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
