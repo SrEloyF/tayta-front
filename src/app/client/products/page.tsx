@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Search, Plus } from 'lucide-react';
 import { ProductFilter } from '@/components/client/products/ProductFilter';
+import { useAddToCart } from '@/hooks/useAddToCart';
 
 export default function ProductsPage() {
   const [productos, setProductos] = useState<any[]>([]);
@@ -19,6 +20,7 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sortOption, setSortOption] = useState('featured');
+  const { addToCart, adding } = useAddToCart();
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -139,6 +141,7 @@ export default function ProductsPage() {
                 <ProductoCard 
                   key={producto.id_producto}
                   producto={producto}
+                  onAddToCart={() => addToCart(producto, 1)}
                 />
               ))}
             </div>

@@ -7,6 +7,7 @@ import { Search } from 'lucide-react';
 import axios from 'axios';
 import { BasicUser } from '@/types';
 import ProductoCard from '@/components/client/products/ProductoCard';
+import { useAddToCart } from '@/hooks/useAddToCart';
 
 const getToken = (): string => {
   if (typeof window !== 'undefined') {
@@ -25,6 +26,7 @@ export default function ServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const { addToCart, adding } = useAddToCart();
 
   useEffect(() => {
     const cargarServicios = async () => {
@@ -139,6 +141,7 @@ export default function ServicesPage() {
                 onDelete={(id: number) => {
                   setServices((prev) => prev.filter((s) => s.id_item !== id));
                 }}
+                onAddToCart={() => addToCart(service, 1)}
               />
             ))}
           </div>

@@ -43,9 +43,10 @@ interface ProductoCardProps {
     es_servicio?: boolean;
   };
   onDelete?: (id: number) => void;
+  onAddToCart?: () => void;
 }
 
-const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete }) => {
+const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddToCart }) => {
   const router = useRouter();
 
   // Manejar caso cuando producto es undefined o tiene datos incompletos
@@ -259,7 +260,7 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete }) => {
                 dark:border-green-700 dark:text-green-300
                 dark:hover:bg-green-900/30
               "
-              onClick={handleContratarOrChat}
+              onClick={es_servicio ? handleContratarOrChat : onAddToCart}
             >
               <ShoppingBag className="w-5 h-5 min-w-[20px]" />
               <span>{es_servicio ? 'Contratar' : 'Añadir al carrito'}</span>
