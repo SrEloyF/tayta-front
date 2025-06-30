@@ -39,7 +39,6 @@ export function CartItem({ item, onRemove, onQuantityChange }: CartItemProps) {
   };
 
   const handleRemove = () => {
-    toast.success('Item eliminado');
     onRemove(String(item.id_carrito_producto));
   };
 
