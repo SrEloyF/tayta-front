@@ -26,14 +26,14 @@ export const userService = {
     if (filters.page) params.append('page', filters.page.toString());
     if (filters.limit) params.append('limit', filters.limit.toString());
 
-    const response = await authFetch(`/api/usuarios?${params.toString()}`);
+    const response = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios?${params.toString()}`);
     if (!response.ok) throw new Error('Error al obtener los usuarios');
     return response.json();
   },
 
   async getUserById(id: number) {
     try {
-      const response = await authFetch(`/api/usuarios/${id}`);
+      const response = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/${id}`);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`No se pudo obtener el usuario ${id}: ${errorText}`);
@@ -46,7 +46,7 @@ export const userService = {
   },
 
   async createUser(userData: Omit<User, 'id_usuario'>) {
-    const response = await authFetch('/api/usuarios', {
+    const response = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ export const userService = {
   },
 
   async updateUser(id: number, userData: Partial<User>) {
-    const response = await authFetch(`/api/usuarios/${id}`, {
+    const response = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
