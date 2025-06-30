@@ -55,9 +55,9 @@ export const ProductoService = {
   async getProductosCompletos() {
     try {
       const [itemsResponse, productosResponse, usuariosResponse] = await Promise.all([
-        authFetch('/api/items').then(res => res.json()),
-        authFetch('/api/productos').then(res => res.json()),
-        authFetch('/api/usuarios').then(res => res.json())
+        authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items`).then(res => res.json()),
+        authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/productos`).then(res => res.json()),
+        authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios`).then(res => res.json())
       ]);
 
       console.log('Respuestas recibidas:', {

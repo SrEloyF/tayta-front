@@ -43,7 +43,7 @@ export default function ServicesPage() {
 
         // Obtener información de vendedores
         const vendedoresPromises = vendedoresIds.map(id =>
-          axios.get<BasicUser>(`/api/usuarios/${id}`, headers()).then(res => res.data)
+          axios.get<BasicUser>(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios/${id}`, headers()).then(res => res.data)
         );
         const vendedores = await Promise.all(vendedoresPromises);
         
