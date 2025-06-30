@@ -26,7 +26,7 @@ export default function RegisterPage() {
       uploadFormData.append('imagen', imagen[0]);
 
       const uploadRes = await axios.post<{ nombreArchivo: string }>(
-        '/api/upload-img',
+        `${process.env.NEXT_PUBLIC_API_URL}/api/upload-img`,
         uploadFormData,
         {
           headers: {
