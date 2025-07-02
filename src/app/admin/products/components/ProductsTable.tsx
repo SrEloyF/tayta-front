@@ -1,9 +1,18 @@
 "use client";
-import { Button } from "@/components/ui/Button";
-import { Edit, Trash2, ImageOff } from "lucide-react";
-import { authFetch } from "@/utils/authFetch";
-import { useEffect, useState } from "react";
-import { AuthImage } from "@/components/ui/AuthImage";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
+import { 
+  Edit2, 
+  Trash2, 
+  Filter, 
+  Search, 
+  ChevronLeft, 
+  ChevronRight,
+  ImageOff
+} from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { AuthImage } from '@/components/ui/AuthImage';
+import { authFetch } from '@/utils/authFetch';
 
 export interface Producto {
   id_item: number;
@@ -11,7 +20,7 @@ export interface Producto {
   descripcion: string;
   precio: number;
   stock: number;
-  estado: string;
+  estado: 'A' | 'I';
   fecha_y_hora: string;
   id_categoria: number;
   id_vendedor: number;
@@ -20,48 +29,69 @@ export interface Producto {
   vendedor_nombre?: string;
 }
 
-interface ProductsTableProps {
+type ProductsTableProps = {
   onEdit: (producto: Producto) => void;
-  onDelete: (id: number) => void;
-}
+};
 
-export const ProductsTable: React.FC<ProductsTableProps> = ({ onEdit, onDelete }) => {
+export function ProductsTable({ onEdit }: ProductsTableProps) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'A' | 'I' | 'ALL'>('ALL');
 
   const fetchProductos = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      console.log('Obteniendo lista de productos...');
-      const res = await authFetch("/api/items?es_servicio=false");
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('Error al obtener productos:', errorText);
-        throw new Error(`Error ${res.status}: No se pudieron cargar los productos`);
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      // Parámetros de búsqueda y filtrado
+      if (searchTerm) params.append('search', searchTerm);
+      if (filterStatus !== 'ALL') params.append('estado', filterStatus);
+      
+      // Parámetros de paginación
+      params.append('page', pagination.page.toString());
+      params.append('limit', pagination.limit.toString());
+      params.append('es_servicio', 'false');
+
+      const response = await authFetch(`/api/items?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('No se pudieron cargar los productos');
       }
-      const data = await res.json();
-      console.log('Productos recibidos:', data);
-      const productosData = Array.isArray(data) ? data : data.data || [];
-      // Verificar si los productos tienen el campo imagen
-      productosData.forEach((prod: any) => {
-        console.log(`Producto ID ${prod.id_item}:`, {
-          nombre: prod.nombre,
-          tieneImagen: !!prod.imagen,
-          tipoImagen: typeof prod.imagen,
-          valorImagen: prod.imagen,
-          urlCompleta: prod.imagen ? 
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://taytaback.onrender.com'}/api/uploads/item_imgs/${prod.imagen}` : 
-            null
-        });
+      
+      const data = await response.json();
+      
+      // Depuración de imágenes
+      console.log('Datos de productos recibidos:', data);
+      const productosConImagen = (data.items || data.data || []).map((producto: any) => {
+        console.log('Producto individual:', producto);
+        return {
+          ...producto,
+          imagen: producto.imagen || producto.url_img || producto.image
+        };
       });
       
-      setProductos(productosData);
-    } catch (err) {
-      console.error("Error al cargar productos:", err);
-      setError("No se pudieron cargar los productos. Intenta recargar la página.");
-      setProductos([]);
+      // Actualizar productos y paginación
+      setProductos(productosConImagen);
+      setPagination(prev => ({
+        ...prev,
+        total: data.pagination?.total || data.total || 0,
+        totalPages: data.pagination?.totalPages || data.totalPages || 1,
+      }));
+    } catch (error) {
+      console.error('Error al cargar productos:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los productos',
+        variant: 'destructive'
+      });
+      setProductos([]); // Asegurar que productos sea un array vacío
     } finally {
       setLoading(false);
     }
@@ -69,175 +99,196 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({ onEdit, onDelete }
 
   useEffect(() => {
     fetchProductos();
-  }, []);
+  }, [pagination.page, pagination.limit, searchTerm, filterStatus]);
 
-  if (loading) return (
-    <div className="flex items-center justify-center p-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
-      <span className="ml-3 text-gray-400">Cargando productos...</span>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 text-center">
-      <p className="text-red-400">{error}</p>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="mt-2"
-        onClick={fetchProductos}
-      >
-        Reintentar
-      </Button>
-    </div>
-  );
-  
-  if (!productos.length) return (
-    <div className="text-center p-8 bg-gray-900/50 rounded-lg border border-dashed border-gray-800">
-      <p className="text-gray-400">No hay productos registrados.</p>
-      <p className="text-sm text-gray-500 mt-1">Crea tu primer producto para comenzar</p>
-    </div>
-  );
+  const handleDelete = async (id: number) => {
+    try {
+      const confirmDelete = window.confirm('¿Está seguro de desactivar este producto?');
+      
+      if (!confirmDelete) return;
+
+      const response = await authFetch(`/api/items/${id}`, { method: 'DELETE' });
+      
+      if (!response.ok) {
+        throw new Error('No se pudo desactivar el producto');
+      }
+      
+      fetchProductos();
+      toast({
+        title: 'Producto desactivado',
+        description: 'El producto ha sido desactivado correctamente',
+      });
+    } catch (error) {
+      console.error('Error al desactivar producto:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo desactivar el producto',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
 
   return (
-    <div className="bg-gray-900/50 rounded-xl overflow-hidden shadow-lg border border-gray-800/50">
-      <div className="px-6 py-4 border-b border-gray-800/50">
-        <h2 className="text-lg font-semibold text-yellow-400">Productos</h2>
-        <p className="text-sm text-gray-400">Gestiona los productos de tu catálogo</p>
-      </div>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-900/30">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Imagen</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Producto</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Precio</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Stock</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Categoría</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-800/50">
-            {productos.map((prod) => (
-              <tr 
-                key={prod.id_item} 
-                className="hover:bg-gray-900/30 transition-colors"
-              >
-                {/* Columna de Imagen */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-md overflow-hidden bg-gray-800/50 flex items-center justify-center">
-                    {prod.imagen ? (
-                      <>
-                        {console.log('URL de la imagen:', `${process.env.NEXT_PUBLIC_API_URL}/api/uploads/item_imgs/${prod.imagen}`)}
-                        <div className="relative">
-                          <div className="absolute -top-6 -left-2 bg-black bg-opacity-75 text-white text-xs p-1 rounded">
-                            ID: {prod.id_item}
-                          </div>
-                          <AuthImage
-                            src={`${process.env.NEXT_PUBLIC_API_URL || 'https://taytaback.onrender.com'}/api/uploads/item_imgs/${prod.imagen}`}
-                            alt={prod.nombre}
-                            width={40}
-                            height={40}
-                            className="h-10 w-10 object-cover border border-gray-700"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <ImageOff className="h-5 w-5 text-gray-500" />
-                    )}
-                  </div>
-                </td>
-                
-                {/* Columna de Nombre y Descripción */}
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-200">{prod.nombre}</div>
-                  <div className="text-xs text-gray-400 line-clamp-2">
-                    {prod.descripcion}
-                  </div>
-                </td>
-                
-                {/* Precio */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-yellow-400 font-medium">
-                    S/ {Number(prod.precio).toFixed(2)}
-                  </div>
-                </td>
-                
-                {/* Stock */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    prod.stock > 10 ? 'bg-green-900/30 text-green-400' : 
-                    prod.stock > 0 ? 'bg-yellow-900/30 text-yellow-400' : 
-                    'bg-red-900/30 text-red-400'
-                  }`}>
-                    {prod.stock} en stock
-                  </span>
-                </td>
-                
-                {/* Estado */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    prod.estado === 'A' ? 'bg-green-900/30 text-green-400' : 'bg-gray-800 text-gray-400'
-                  }`}>
-                    {prod.estado === 'A' ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                
-                {/* Categoría */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-300">
-                    {prod.categoria_nombre || `ID: ${prod.id_categoria}`}
-                  </div>
-                </td>
-                
-                {/* Acciones */}
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onEdit(prod)}
-                      className="text-gray-400 hover:text-yellow-400"
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Editar</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onDelete(prod.id_item)}
-                      className="text-gray-400 hover:text-red-400"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Eliminar</span>
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {/* Paginación (opcional) */}
-      <div className="px-6 py-3 flex items-center justify-between border-t border-gray-800/50 bg-gray-900/30">
-        <div className="flex-1 flex justify-between items-center">
-          <div className="text-sm text-gray-400">
-            Mostrando <span className="font-medium">1</span> a <span className="font-medium">{productos.length}</span> de{' '}
-            <span className="font-medium">{productos.length}</span> resultados
+    <div className="bg-gray-900 rounded-xl shadow-lg border border-yellow-700/10">
+      <div className="p-4 flex justify-between items-center border-b border-gray-800">
+        <div className="flex space-x-2">
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Buscar productos..." 
+              className="pl-10 pr-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-600"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Search className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
           </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" disabled>
-              Anterior
-            </Button>
-            <Button variant="outline" size="sm" disabled>
-              Siguiente
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={`${filterStatus === 'ALL' ? 'bg-yellow-600 text-white' : 'text-gray-400'}`}
+              onClick={() => setFilterStatus('ALL')}
+            >
+              <Filter className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-800 text-gray-300">
+            <tr>
+              <th className="px-4 py-3 text-left">Imagen</th>
+              <th className="px-4 py-3 text-left">Nombre</th>
+              <th className="px-4 py-3 text-left">Precio</th>
+              <th className="px-4 py-3 text-center">Stock</th>
+              <th className="px-4 py-3 text-center">Estado</th>
+              <th className="px-4 py-3 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="text-center py-4 text-gray-400">
+                  Cargando productos...
+                </td>
+              </tr>
+            ) : productos.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-4 text-gray-400">
+                  No se encontraron productos
+                </td>
+              </tr>
+            ) : (
+              productos.map((producto) => (
+                <tr key={producto.id_item} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-700 flex items-center justify-center">
+                      {producto.imagen ? (
+                        <AuthImage
+                          src={`${process.env.NEXT_PUBLIC_API_URL || 'https://taytaback.onrender.com'}/api/uploads/item_imgs/${producto.imagen}`}
+                          alt={producto.nombre}
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Error cargando imagen:', producto.imagen);
+                            e.currentTarget.src = '/default-product.jpg'; // Imagen de respaldo
+                          }}
+                        />
+                      ) : (
+                        <ImageOff className="h-5 w-5 text-gray-300" />
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-white">{producto.nombre}</div>
+                    <div className="text-xs text-gray-400 line-clamp-1">{producto.descripcion}</div>
+                  </td>
+                  <td className="px-4 py-3 text-yellow-400">S/ {producto.precio.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        producto.stock > 10 
+                          ? 'bg-green-600/20 text-green-400' 
+                          : producto.stock > 0 
+                            ? 'bg-yellow-600/20 text-yellow-400' 
+                            : 'bg-red-600/20 text-red-400'
+                      }`}
+                    >
+                      {producto.stock} en stock
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span 
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        producto.estado === 'A' 
+                          ? 'bg-green-600/20 text-green-400' 
+                          : 'bg-red-600/20 text-red-400'
+                      }`}
+                    >
+                      {producto.estado === 'A' ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="text-yellow-500 hover:bg-yellow-500/10"
+                        onClick={() => onEdit(producto)}
+                      >
+                        <Edit2 className="h-5 w-5" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="text-red-500 hover:bg-red-500/10"
+                        onClick={() => handleDelete(producto.id_item)}
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex justify-between items-center p-4 border-t border-gray-800">
+        <div className="text-sm text-gray-400">
+          Mostrando {(pagination.page - 1) * pagination.limit + 1} - {Math.min(pagination.page * pagination.limit, productos.length)} de {pagination.total} productos
+        </div>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            disabled={pagination.page === 1}
+            onClick={() => handlePageChange(pagination.page - 1)}
+            className="text-gray-300 hover:text-white disabled:opacity-50"
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            disabled={pagination.page === pagination.totalPages}
+            onClick={() => handlePageChange(pagination.page + 1)}
+            className="text-gray-300 hover:text-white disabled:opacity-50"
+          >
+            Siguiente <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
-};
+}

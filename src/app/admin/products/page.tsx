@@ -1,68 +1,87 @@
 "use client";
 import React, { useState, useCallback } from "react";
-import { ProductsTable, Producto } from "./components/ProductsTable";
+import { ProductsTable } from "./components/ProductsTable";
 import { ProductForm } from "./components/ProductForm";
+import { Button } from '@/components/ui/Button';
+import { Plus, Edit2, ArrowLeft } from 'lucide-react';
+import { Producto } from "@/features/types";
 
 export default function ProductsPage() {
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Producto | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
+  const [showProductForm, setShowProductForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Abre el formulario para crear
-  const handleNew = () => {
-    setEditing(null);
-    setFormOpen(true);
+  // Abre el formulario para crear nuevo producto
+  const handleNewProduct = () => {
+    setSelectedProduct(null);
+    setShowProductForm(true);
   };
 
-  // Abre el formulario para editar
-  const handleEdit = (producto: Producto) => {
-    setEditing(producto);
-    setFormOpen(true);
+  // Abre el formulario para editar producto
+  const handleEditProduct = (producto: Producto) => {
+    setSelectedProduct(producto);
+    setShowProductForm(true);
   };
 
-  // Borra un producto y refresca la tabla
-  const handleDelete = async (id: number) => {
-    if (window.confirm("¿Seguro que deseas eliminar este producto?")) {
-      await fetch(`/api/items/${id}`, { method: "DELETE" });
-      setRefreshKey(k => k + 1);
-    }
-  };
-
-  // Al guardar/cancelar, cerrar formulario y refrescar tabla
-  const handleSuccess = useCallback(() => {
-    setFormOpen(false);
-    setEditing(null);
-    setRefreshKey(k => k + 1);
+  // Maneja el éxito al guardar (crear o editar)
+  const handleFormSuccess = useCallback(() => {
+    setShowProductForm(false);
+    setSelectedProduct(null);
+    // Forzar actualización de la tabla
+    setRefreshKey(prev => prev + 1);
   }, []);
-  const handleCancel = useCallback(() => {
-    setFormOpen(false);
-    setEditing(null);
+
+  // Cancela el formulario
+  const handleFormCancel = useCallback(() => {
+    setShowProductForm(false);
+    setSelectedProduct(null);
   }, []);
 
   return (
-    <div className="p-8 space-y-8 bg-gray-950 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-yellow-400">Gestión de Productos</h1>
-        <button
-          className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors"
-          onClick={handleNew}
-        >
-          Nuevo Producto
-        </button>
+    <div className="p-4 md:p-8 space-y-8 bg-gray-950 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex items-center space-x-4">
+          {showProductForm && (
+            <Button 
+              onClick={handleFormCancel}
+              variant="outline"
+              className="text-gray-300 hover:text-white border-gray-700"
+            >
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Volver
+            </Button>
+          )}
+          <h1 className="text-2xl font-bold text-yellow-400">
+            {showProductForm 
+              ? (selectedProduct ? 'Editar Producto' : 'Nuevo Producto') 
+              : 'Gestión de Productos'}
+          </h1>
+        </div>
+        
+        {!showProductForm && (
+          <Button 
+            onClick={handleNewProduct}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white flex items-center"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Nuevo Producto
+          </Button>
+        )}
       </div>
-      <ProductsTable
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        key={refreshKey}
-      />
-      {formOpen && (
-        <div className="mt-8">
-          <ProductForm
-            initialData={editing}
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
+
+      {showProductForm ? (
+        <div className="bg-gray-900 rounded-xl p-6 shadow-lg border border-yellow-700/10">
+          <ProductForm 
+            initialData={selectedProduct} 
+            onSuccess={handleFormSuccess}
+            onCancel={handleFormCancel}
           />
         </div>
+      ) : (
+        <ProductsTable 
+          key={refreshKey} 
+          onEdit={handleEditProduct} 
+        />
       )}
     </div>
   );

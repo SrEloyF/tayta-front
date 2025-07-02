@@ -89,20 +89,24 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       formData.append('imagen', file);
       const folderName = String(folder || 'item_imgs');
       
-      // Crear la URL con el parámetro de consulta
-      const uploadUrl = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img`);
-      uploadUrl.searchParams.append('carpeta', folderName);
-
-      // Agregar el ID del ítem si está disponible
-      if (itemId) {
-        uploadUrl.searchParams.append('itemId', String(itemId));
-      }
-      
       try {
         setIsLoading(true);
-        console.log('Enviando archivo a carpeta:', folderName);
+        console.log('Subiendo imagen:', file);
+        console.log('Tipo de imagen:', file.type);
+        console.log('Tamaño de imagen:', file.size);
+        console.log('Carpeta:', folderName);
         
-        // Usar fetch directamente con la URL completa
+        // Crear la URL con el parámetro de consulta
+        const uploadUrl = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img`);
+        uploadUrl.searchParams.append('carpeta', folderName);
+
+        // Agregar el ID del ítem si está disponible
+        if (itemId) {
+          uploadUrl.searchParams.append('itemId', String(itemId));
+        }
+        
+        console.log('URL de subida:', uploadUrl.toString());
+        
         const token = localStorage.getItem('auth-token');
         const headers = new Headers();
         
@@ -118,19 +122,31 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           credentials: 'include' // Importante para enviar cookies de autenticación
         });
         
+        console.log('Respuesta de subida:', res.status, res.statusText);
+        
+        // Leer el cuerpo de la respuesta para más detalles
+        const responseBody = await res.text();
+        console.log('Cuerpo de la respuesta:', responseBody);
+        
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Error al subir la imagen');
+          throw new Error(responseBody || 'Error al subir la imagen');
         }
         
-        const data = await res.json();
-        console.log('Respuesta de subida de imagen:', data);
+        let data;
+        try {
+          data = JSON.parse(responseBody);
+        } catch (parseError) {
+          console.error('Error parseando respuesta:', parseError);
+          throw new Error('Respuesta del servidor no es un JSON válido');
+        }
+        
+        console.log('Datos de respuesta:', data);
         
         // Actualizar el valor de la imagen
         onChange(data.nombreArchivo);
         toast.success('Imagen subida correctamente');
       } catch (error) {
-        console.error('Error al subir la imagen:', error);
+        console.error('Error detallado al subir la imagen:', error);
         setFileError('Error al subir la imagen');
         toast.error(error instanceof Error ? error.message : 'Error al subir la imagen');
       } finally {

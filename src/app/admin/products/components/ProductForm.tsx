@@ -70,15 +70,96 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess
       const method = initialData ? "PUT" : "POST";
       const url = initialData ? `/api/items/${initialData.id_item}` : "/api/items";
       
-      // Crear el cuerpo con los valores del formulario
-      const body = { 
-        ...values, 
+      // Depuración completa
+      console.log('Valores recibidos:', JSON.stringify(values, null, 2));
+      console.log('Tipo de imagen:', typeof values.imagen);
+      console.log('Contenido de imagen:', values.imagen);
+
+      // Preparar datos para enviar
+      const body: Partial<Producto> = { 
+        ...values,
         es_servicio: false,
-        // Asegurarse de que la URL de la imagen sea relativa
-        imagen: values.imagen?.startsWith('http') 
-          ? values.imagen.split('/').pop() 
-          : values.imagen
+        estado: 'A'
       };
+
+      // Manejar la imagen
+      let nombreArchivo = initialData?.url_img;
+      
+      // Verificación exhaustiva de la imagen
+      const imagen = values.imagen 
+        ? (values.imagen instanceof FileList 
+          ? values.imagen[0] 
+          : (Array.isArray(values.imagen) && values.imagen.length > 0
+            ? values.imagen[0]
+            : (typeof values.imagen === 'object' && 'name' in values.imagen
+              ? values.imagen
+              : null)))
+        : null;
+
+      console.log('Objeto imagen detectado:', imagen);
+      console.log('Tipo de imagen detectada:', typeof imagen);
+      console.log('Propiedades de imagen:', imagen ? Object.keys(imagen) : 'No hay imagen');
+
+      // Si hay un archivo nuevo para subir
+      if (imagen) {
+        const uploadData = new FormData();
+        uploadData.append('carpeta', 'item_imgs');
+        uploadData.append('imagen', imagen);
+
+        console.log('Detalles de imagen a subir:', {
+          name: imagen.name,
+          type: imagen.type,
+          size: imagen.size
+        });
+
+        const token = localStorage.getItem('auth-token');
+
+        console.log('Iniciando subida de imagen...');
+        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img?carpeta=item_imgs`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: uploadData
+        });
+
+        console.log('Respuesta de subida:', {
+          status: uploadRes.status,
+          statusText: uploadRes.statusText
+        });
+
+        // Leer el cuerpo de la respuesta para más detalles
+        const responseBody = await uploadRes.text();
+        console.log('Cuerpo de la respuesta:', responseBody);
+
+        if (!uploadRes.ok) {
+          throw new Error(responseBody || 'Error al subir la imagen');
+        }
+
+        let uploadResponseData;
+        try {
+          uploadResponseData = JSON.parse(responseBody);
+        } catch (parseError) {
+          console.error('Error parseando respuesta:', parseError);
+          throw new Error('Respuesta del servidor no es un JSON válido');
+        }
+
+        nombreArchivo = uploadResponseData.nombreArchivo;
+        console.log('Nombre de archivo subido:', nombreArchivo);
+      } 
+      // Si ya es un nombre de archivo de imagen existente
+      else if (typeof values.imagen === 'string') {
+        nombreArchivo = values.imagen;
+        console.log('Usando nombre de archivo existente:', nombreArchivo);
+      }
+
+      // Agregar url_img al cuerpo
+      body.url_img = nombreArchivo;
+
+      // Eliminar campos undefined
+      Object.keys(body).forEach(key => 
+        body[key as keyof Partial<Producto>] === undefined && delete body[key as keyof Partial<Producto>]
+      );
 
       const res = await authFetch(url, {
         method,
@@ -95,7 +176,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess
       onSuccess();
       reset();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error completo:', error);
       toast.error(error instanceof Error ? error.message : 'Error al procesar la solicitud');
     } finally {
       setIsLoading(false);

@@ -11,7 +11,7 @@ import { User, UserFormData } from '@/types';
 import { userService } from '@/services/userService';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Search, RefreshCw, UserPlus, Edit, Trash2, Check, X } from 'lucide-react';
+import { Search, RefreshCw, UserPlus, Edit, Trash2, Check, X, Edit2, UserCheck, UserX, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type UserStatus = 'A' | 'I' | '';
 
@@ -123,41 +123,43 @@ export function UsersTable({ onEditUser }: UsersTableProps) {
     setSelectedUser(user);
     // Aquí podrías mostrar un modal de confirmación personalizado
     if (window.confirm(`¿Está seguro de eliminar al usuario ${user.nombres} ${user.apellidos}? Esta acción no se puede deshacer.`)) {
-      handleDeleteUser(user.id_usuario);
+      handleDelete(user.id_usuario);
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDelete = async (userId: number) => {
     try {
-      setIsDeleting(true);
-      // Aquí iría la llamada al servicio para eliminar el usuario
-      // await userService.deleteUser(userId);
+      // Mostrar confirmación antes de desactivar
+      const confirmDelete = window.confirm('¿Está seguro de desactivar este usuario? No podrá realizar acciones en el sistema.');
       
-      toast({
-        title: 'Usuario eliminado',
-        description: 'El usuario ha sido eliminado correctamente.',
-      });
+      if (!confirmDelete) return;
+
+      console.log('Intentando desactivar usuario:', userId);
       
-      // Si el usuario eliminado está en la página actual y es el último de la lista,
-      // volver a la página anterior
-      if (users.length === 1 && pagination.page > 1) {
-        setPagination(prev => ({
-          ...prev,
-          page: prev.page - 1,
-        }));
-      } else {
+      const response = await userService.deleteUser(userId);
+      console.log('Respuesta de desactivación:', response);
+      
+      // Verificar si la desactivación fue exitosa
+      if (response.success) {
         fetchUsers();
+        toast({
+          title: 'Usuario desactivado',
+          description: 'El usuario ha sido desactivado correctamente',
+        });
+      } else {
+        throw new Error('No se pudo desactivar el usuario');
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo eliminar el usuario. Intente nuevamente.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
-      setSelectedUser(null);
+      console.error('Error al desactivar usuario:', error);
+      
+      // Si es un error de red, mostrar más detalles
+      if (error instanceof Error) {
+        toast({
+          title: 'Error al desactivar',
+          description: `No se pudo desactivar el usuario: ${error.message}`,
+          variant: 'destructive'
+        });
+      }
     }
   };
 
@@ -272,21 +274,6 @@ export function UsersTable({ onEditUser }: UsersTableProps) {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <button
-                      className={`h-8 w-8 flex items-center justify-center rounded border border-gray-700 ${user.estado === 'A'
-                        ? 'text-red-400 hover:bg-red-500/10'
-                        : 'text-green-400 hover:bg-green-500/10'
-                      }`}
-                      onClick={() => handleToggleStatus(user)}
-                      disabled={isDeleting && selectedUser?.id_usuario === user.id_usuario}
-                      title={user.estado === 'A' ? 'Desactivar usuario' : 'Activar usuario'}
-                    >
-                      {user.estado === 'A' ? (
-                        <X className="h-4 w-4" />
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </button>
                     <Button
                       variant="outline"
                       onClick={() => handleDeleteClick(user)}

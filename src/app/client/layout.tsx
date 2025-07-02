@@ -6,6 +6,7 @@ import { ClientFooter } from '@/components/client/ClientFooter';
 import { AuthProvider } from '@/providers/AuthProvider';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { usePathname } from 'next/navigation';
+import AIChat from '@/components/client/AIChat';
 
 export default function ClientLayout({
   children,
@@ -24,6 +25,7 @@ export default function ClientLayout({
             {children}
           </main>
           {!isChatsPage && <ClientFooter />}
+          <AIChat />
         </div>
       </AuthGuard>
     </AuthProvider>

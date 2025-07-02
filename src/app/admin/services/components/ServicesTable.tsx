@@ -20,9 +20,20 @@ export interface Servicio {
 interface ServicesTableProps {
   onEdit: (servicio: Servicio) => void;
   onDelete: (id: number) => void;
+  searchTerm?: string;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  onTotalPagesChange?: (pages: number) => void;
 }
 
-export const ServicesTable: React.FC<ServicesTableProps> = ({ onEdit, onDelete }) => {
+export const ServicesTable: React.FC<ServicesTableProps> = ({ 
+  onEdit, 
+  onDelete, 
+  searchTerm = '', 
+  currentPage = 1,
+  onPageChange,
+  onTotalPagesChange 
+}) => {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,16 +42,33 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({ onEdit, onDelete }
     setLoading(true);
     setError(null);
     try {
-      const res = await authFetch("/api/items?es_servicio=true");
+      const params = new URLSearchParams({
+        es_servicio: 'true',
+        page: currentPage.toString(),
+        search: searchTerm
+      });
+      const res = await authFetch(`/api/items?${params.toString()}`);
       if (!res.ok) {
         throw new Error(`Error ${res.status}: No se pudieron cargar los servicios`);
       }
       const data = await res.json();
-      setServicios(Array.isArray(data) ? data : data.data || []);
+      
+      // Actualizar servicios
+      setServicios(Array.isArray(data.data) ? data.data : []);
+      
+      // Actualizar total de páginas si está disponible
+      if (data.totalPages && onTotalPagesChange) {
+        onTotalPagesChange(data.totalPages);
+      }
     } catch (err) {
       console.error("Error al cargar servicios:", err);
       setError("No se pudieron cargar los servicios. Intenta recargar la página.");
       setServicios([]);
+      
+      // Establecer 1 página por defecto si hay un error
+      if (onTotalPagesChange) {
+        onTotalPagesChange(1);
+      }
     } finally {
       setLoading(false);
     }
@@ -48,7 +76,7 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({ onEdit, onDelete }
 
   useEffect(() => {
     fetchServicios();
-  }, []);
+  }, [searchTerm, currentPage]);
 
   if (loading) return <div className="text-gray-400 p-4">Cargando servicios...</div>;
   if (error) return <div className="text-red-400 p-4">{error}</div>;

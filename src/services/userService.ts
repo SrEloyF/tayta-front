@@ -9,6 +9,7 @@ type User = {
   telefono: string;
   estado: 'A' | 'I';
   url_img?: string;
+  contrasena?: string;
 };
 
 type UserFilters = {
@@ -77,5 +78,41 @@ export const userService = {
 
   async toggleUserStatus(id: number, currentStatus: 'A' | 'I') {
     return this.updateUser(id, { estado: currentStatus === 'A' ? 'I' : 'A' });
+  },
+
+  async deleteUser(id: number) {
+    try {
+      console.log('Intentando desactivar usuario con ID:', id);
+      
+      // Obtener los datos completos del usuario
+      const userData = await this.getUserById(id);
+      
+      // Preparar datos para actualización
+      const updateData = {
+        nombres: userData.nombres,
+        apellidos: userData.apellidos,
+        email: userData.email,
+        dni: userData.dni,
+        telefono: userData.telefono,
+        url_img: userData.url_img || 'https://via.placeholder.com/150',
+        estado: 'I',
+        // Agregar contraseña si es necesario (puede requerir lógica adicional)
+        contrasena: userData.contrasena || '', 
+      };
+      
+      // Desactivar el usuario
+      const response = await this.updateUser(id, updateData);
+      
+      console.log('Respuesta de desactivación:', response);
+      
+      return { 
+        success: true, 
+        message: 'Usuario desactivado correctamente',
+        user: response 
+      };
+    } catch (error) {
+      console.error('Error al desactivar usuario:', error);
+      throw error;
+    }
   },
 };

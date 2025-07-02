@@ -105,16 +105,18 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
       setIsLoading(true);
       
       if (isEditMode && user?.id_usuario) {
-        // Para actualizar, no requerimos contraseña a menos que se esté cambiando
-        const updateData: Partial<UserFormData> = { ...formData };
-        
-        // Si la contraseña está vacía, no la incluimos en la actualización
-        if (!updateData.contrasena) {
-          delete updateData.contrasena;
-        }
-        
-        // Eliminar campos que no se deben enviar
-        delete updateData.confirmarContrasena;
+        // Preparar datos para actualización
+        const updateData: Partial<UserFormData> = {
+          nombres: formData.nombres,
+          apellidos: formData.apellidos,
+          email: user.email, // Usar el email original
+          dni: user.dni, // Usar el DNI original
+          telefono: formData.telefono,
+          estado: formData.estado,
+          url_img: formData.url_img || user.url_img,
+          // IMPORTANTE: Siempre enviar la contraseña actual o una nueva
+          contrasena: formData.contrasena || user.contrasena || '', 
+        };
         
         await userService.updateUser(user.id_usuario, updateData as UserFormData);
         
@@ -147,9 +149,6 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
           router.push('/admin/users');
         }
       }
-
-      // Llamar a la función de éxito si se proporciona
-      if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error al guardar el usuario:', error);
       toast({
