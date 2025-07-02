@@ -41,20 +41,20 @@ export function ClientFooter() {
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider mb-4">Empresa</h4>
             <ul className="space-y-2">
-              <li><Link href="/about" className="text-gray-400 hover:text-white">Nosotros</Link></li>
-              <li><Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link></li>
-              <li><Link href="/careers" className="text-gray-400 hover:text-white">Carreras</Link></li>
-              <li><Link href="/press" className="text-gray-400 hover:text-white">Prensa</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Nosotros</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Blog</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Carreras</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Prensa</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider mb-4">Legal</h4>
             <ul className="space-y-2">
-              <li><Link href="/privacy" className="text-gray-400 hover:text-white">Privacidad</Link></li>
-              <li><Link href="/terms" className="text-gray-400 hover:text-white">Términos</Link></li>
-              <li><Link href="/security" className="text-gray-400 hover:text-white">Seguridad</Link></li>
-              <li><Link href="/contact" className="text-gray-400 hover:text-white">Contacto</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Privacidad</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Términos</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Seguridad</Link></li>
+              <li><Link href="#" onClick={(e) => e.preventDefault()} className="text-gray-400 hover:text-white">Contacto</Link></li>
             </ul>
           </div>
         </div>

@@ -1,4 +1,3 @@
-// app/api/uploads/item_imgs/[filename]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 // Esta ruta no es compatible con exportación estática
