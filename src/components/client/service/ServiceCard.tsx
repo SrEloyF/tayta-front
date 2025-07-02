@@ -80,7 +80,7 @@ export const ServiceCard = ({ service, onDelete }: ServiceCardProps) => {
       <div className="relative h-48 md:h-56 overflow-hidden flex items-center justify-center bg-gradient-to-t from-gray-200 to-white dark:from-gray-800 dark:to-gray-900">
         {service.imagen_url || service.imagen ? (
           <img
-            src={`/api/uploads/item_imgs/${service.imagen_url || service.imagen}`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}/api/uploads/item_imgs/${service.imagen_url || service.imagen}`}
             alt={service.nombre}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-t-2xl"
             onError={() => setImageError(true)}

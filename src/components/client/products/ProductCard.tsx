@@ -1,4 +1,5 @@
 // components/client/ProductCard.tsx
+//al parecer este componente no se está usando xdd
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
