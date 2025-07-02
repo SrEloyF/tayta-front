@@ -7,49 +7,56 @@ interface ImageWithAuthProps {
   alt?: string;
   className?: string;
   style?: React.CSSProperties;
+  onError?: () => void;
+  onLoadSuccess?: () => void;
+  showDefaultOnError?: boolean;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://taytaback.onrender.com';
 
-export const ImageWithAuth: React.FC<ImageWithAuthProps> = ({ imagePath, alt = '', className = '' }) => {
+export const ImageWithAuth: React.FC<ImageWithAuthProps> = ({ imagePath, alt = '', className = '', onError, onLoadSuccess, showDefaultOnError= true }) => {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
 
-  useEffect(() => {
+   useEffect(() => {
     const fetchImage = async () => {
       try {
-        // Si no hay ruta de imagen, usar imagen por defecto
         if (!imagePath || imagePath === 'undefined') {
-          setImgSrc('/images/default-product.jpg');
+          if (showDefaultOnError) {
+            setImgSrc('/images/default-product.jpg');
+          } else {
+            setImgSrc(null);
+            if (onError) onError();
+          }
           return;
         }
-        
         const token = localStorage.getItem('auth-token');
         if (!token) throw new Error('Token no encontrado');
 
         const response = await fetch(`${API_BASE_URL}/api/uploads/${imagePath}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         if (!response.ok) {
-          if (response.status === 404) {
-            //console.error(`Imagen no encontrada en el servidor: ${imagePath}`);
+          if (showDefaultOnError) {
+            setImgSrc('/images/default-product.jpg');
           } else {
-            console.error(`Error al obtener la imagen, código de estado: ${response.status}`);
+            setImgSrc(null);
+            if (onError) onError();
           }
-          // Si la imagen no se puede cargar, usar imagen por defecto
-          setImgSrc('/images/default-product.jpg');
           return;
         }
 
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         setImgSrc(url);
+        if (onLoadSuccess) onLoadSuccess();
       } catch (error) {
-        console.error('No se pudo cargar la imagen:', error);
-        // En caso de cualquier error, usar imagen por defecto
-        setImgSrc('/images/default-product.jpg');
+        if (showDefaultOnError) {
+          setImgSrc('/images/default-product.jpg');
+        } else {
+          setImgSrc(null);
+          if (onError) onError();
+        }
       }
     };
 
