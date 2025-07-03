@@ -8,7 +8,6 @@ interface AuthResponse {
   refreshToken?: string;
   user: {
     id: string;
-    name: string;
     email: string;
   };
 }
@@ -85,7 +84,79 @@ export const AuthService = {
   async register(userData: RegisterFormData) {
     const response = await axios.post(`${BASE_URL}/usuarios`, userData);
     return response.data;
-  }
+  },
+
+  async adminLogin(credentials: LoginFormData): Promise<AuthResponse> {
+    try {
+      console.log('Admin Login Attempt:', {
+        email: credentials.email.trim(),
+        baseUrl: BASE_URL
+      });
+
+      const response = await axios.post(
+        `${BASE_URL}/auth/login/admin`,
+        {
+          email: credentials.email.trim(),
+          contrasena: credentials.contrasena
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000
+        }
+      );
+
+      console.log('Full admin login server response:', response.data);
+
+      const { accessToken, refreshToken } = response.data;
+
+      // Intentar extraer información del token
+      const tokenParts = accessToken.split('.');
+      let user = null;
+      
+      try {
+        // Decodificar payload manualmente
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString('utf-8'));
+        
+        console.log('Token payload decoded:', {
+          id: payload.id,
+          email: payload.email
+        });
+
+        user = {
+          id: payload.id.toString(),
+          email: payload.email || credentials.email.trim()
+        };
+      } catch (decodeError) {
+        console.error('Error decoding admin token payload:', decodeError);
+        throw new Error('No se pudo procesar la información de usuario');
+      }
+
+      if (!accessToken || !user) {
+        console.error('Invalid admin server response structure');
+        throw new Error('Respuesta del servidor inválida');
+      }
+
+      return {
+        token: accessToken,
+        refreshToken,
+        user
+      };
+    } catch (error) {
+      console.error('Unexpected Admin Login Error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        console.error('Axios Error Details:', {
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.response?.headers
+        });
+      }
+      
+      throw new Error('Error al iniciar sesión como administrador. Verifica tus credenciales.');
+    }
+  },
 };
 
 // Función para decodificar JWT

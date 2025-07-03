@@ -24,7 +24,7 @@ export const ProductoService = {
   async getProductoCompleto(id: number): Promise<any> {
     try {
       // Obtener el ítem primero
-      const itemResponse = await authFetch(`/api/items/${id}`);
+      const itemResponse = await authFetch(`https://taytaback.onrender.com/api/items/${id}`);
       const item = await itemResponse.json() as {
         id_categoria: number | string;
         precio: number | string;
@@ -35,7 +35,7 @@ export const ProductoService = {
       // Intentar obtener el producto solo si no es servicio
       let productoData: { stock: number; [key: string]: any } = { stock: 0 };
       if (!item.es_servicio) {
-        const productoResponse = await authFetch(`/api/productos/${id}`);
+        const productoResponse = await authFetch(`https://taytaback.onrender.com/api/productos/${id}`);
         productoData = await productoResponse.json() as { stock: number; [key: string]: any };
       }
 
@@ -55,9 +55,9 @@ export const ProductoService = {
   async getProductosCompletos() {
     try {
       const [itemsResponse, productosResponse, usuariosResponse] = await Promise.all([
-        authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/items`).then(res => res.json()),
-        authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/productos`).then(res => res.json()),
-        authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios`).then(res => res.json())
+        authFetch('https://taytaback.onrender.com/api/items').then(res => res.json()),
+        authFetch('https://taytaback.onrender.com/api/productos').then(res => res.json()),
+        authFetch('https://taytaback.onrender.com/api/usuarios').then(res => res.json())
       ]);
 
       console.log('Respuestas recibidas:', {
@@ -85,7 +85,7 @@ export const ProductoService = {
 
   async createProducto(data: Omit<Producto, 'id_producto'>) {
     try {
-      const itemResponse = await authFetch('/api/items', {
+      const itemResponse = await authFetch('https://taytaback.onrender.com/api/items', {
         method: 'POST',
         body: JSON.stringify({
           id_categoria: data.id_categoria,
@@ -100,7 +100,7 @@ export const ProductoService = {
       const itemData = await itemResponse.json();
 
       if (!data.es_servicio) {
-        await authFetch('/api/productos', {
+        await authFetch('https://taytaback.onrender.com/api/productos', {
           method: 'POST',
           body: JSON.stringify({
             id_producto: itemData.id_item,
@@ -122,13 +122,13 @@ export const ProductoService = {
 
   async deleteProducto(id: number) {
     try {
-      await authFetch(`/api/productos/${id}`, {
+      await authFetch(`https://taytaback.onrender.com/api/productos/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${getToken()}`
         }
       });
-      await authFetch(`/api/items/${id}`, {
+      await authFetch(`https://taytaback.onrender.com/api/items/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${getToken()}`
@@ -143,7 +143,7 @@ export const ProductoService = {
 
   async updateItem(id: number, data: any) {
     try {
-      const response = await authFetch(`/api/items/${id}`, {
+      const response = await authFetch(`https://taytaback.onrender.com/api/items/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
         headers: {
@@ -159,7 +159,7 @@ export const ProductoService = {
 
   async updateProducto(id: number, data: any) {
     try {
-      const response = await authFetch(`/api/productos/${id}`, {
+      const response = await authFetch(`https://taytaback.onrender.com/api/productos/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
         headers: {
@@ -175,8 +175,8 @@ export const ProductoService = {
 
   async getCategorias() {
     try {
-      console.log('Intentando obtener categorías desde:', `${API_BASE_URL}/api/categorias`);
-      const response = await authFetch('/api/categorias');
+      console.log('Intentando obtener categorías desde: https://taytaback.onrender.com/api/categorias');
+      const response = await authFetch('https://taytaback.onrender.com/api/categorias');
       const data = await response.json();
       
       console.log('Respuesta de categorías:', data);
