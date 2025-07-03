@@ -69,17 +69,6 @@ export default function ProductsPage() {
     return 0;
   });
 
-  const handleDelete = async (id: number) => {
-    if (confirm('¿Estás seguro de eliminar este producto?')) {
-      try {
-        await ProductoService.deleteProducto(id);
-        setProductos(productos.filter(p => p.id_producto !== id));
-      } catch (error) {
-        console.error('Error eliminando producto:', error);
-      }
-    }
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto p-4 flex justify-center items-center h-64">

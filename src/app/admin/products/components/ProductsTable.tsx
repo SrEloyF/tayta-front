@@ -51,34 +51,44 @@ export function ProductsTable({ onEdit }: ProductsTableProps) {
       const params = new URLSearchParams();
       
       // Parámetros de búsqueda y filtrado
+      params.append('es_servicio', 'false'); // Asegurar solo productos
       if (searchTerm) params.append('search', searchTerm);
       if (filterStatus !== 'ALL') params.append('estado', filterStatus);
       
       // Parámetros de paginación
       params.append('page', pagination.page.toString());
       params.append('limit', pagination.limit.toString());
-      params.append('es_servicio', 'false');
 
-      const response = await authFetch(`/api/items?${params.toString()}`);
+      const url = `https://taytaback.onrender.com/api/items?${params.toString()}`;
+      console.log('[ProductsTable] Fetching products URL:', url);
+
+      const response = await authFetch(url);
+      
+      console.log('[ProductsTable] Response status:', response.status);
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[ProductsTable] Error response:', errorText);
         throw new Error('No se pudieron cargar los productos');
       }
       
       const data = await response.json();
+      console.log('[ProductsTable] Received data:', data);
       
-      // Depuración de imágenes
-      console.log('Datos de productos recibidos:', data);
-      const productosConImagen = (data.items || data.data || []).map((producto: any) => {
-        console.log('Producto individual:', producto);
-        return {
+      // Filtrar explícitamente productos
+      const productosData = (data.items || data.data || [])
+        .filter((item: any) => 
+          item.es_servicio === false || 
+          item.es_servicio === 'false' || 
+          item.es_servicio === 0
+        )
+        .map((producto: any) => ({
           ...producto,
           imagen: producto.imagen || producto.url_img || producto.image
-        };
-      });
+        }));
       
       // Actualizar productos y paginación
-      setProductos(productosConImagen);
+      setProductos(productosData);
       setPagination(prev => ({
         ...prev,
         total: data.pagination?.total || data.total || 0,
@@ -107,7 +117,7 @@ export function ProductsTable({ onEdit }: ProductsTableProps) {
       
       if (!confirmDelete) return;
 
-      const response = await authFetch(`/api/items/${id}`, { method: 'DELETE' });
+      const response = await authFetch(`https://taytaback.onrender.com/api/items/${id}`, { method: 'DELETE' });
       
       if (!response.ok) {
         throw new Error('No se pudo desactivar el producto');
