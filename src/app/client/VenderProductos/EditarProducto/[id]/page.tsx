@@ -88,6 +88,33 @@ export default function EditarProductoPage() {
         throw new Error("Acceso no autorizado");
       }
 
+      let url_img = producto.url_img; // valor por defecto: la imagen actual
+
+    // --- Lógica para actualizar imagen SOLO si se seleccionó una nueva ---
+    if (formData.imagen && formData.imagen.length > 0) {
+      const token = localStorage.getItem('auth-token');
+      const uploadData = new FormData();
+      uploadData.append('carpeta', 'item_imgs');
+      uploadData.append('imagen', formData.imagen[0]);
+
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: uploadData
+      });
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al subir la imagen');
+      }
+
+      const { nombreArchivo } = await uploadRes.json();
+      url_img = nombreArchivo; // actualiza el nombre de la imagen en el payload
+    }
+      
+
       // Actualización segura (CORRECCIÓN 3: Validación adicional)
       const updatePayload = {
         nombre: formData.nombre,
@@ -96,7 +123,11 @@ export default function EditarProductoPage() {
         estado: formData.estado,
         id_categoria: Number(formData.id_categoria),
         id_vendedor: vendedorId, // Usar valor convertido
+        descripcion: formData.descripcion,
+        url_img,
       };
+
+      //return;
 
       await ProductoService.updateItem(Number(id), updatePayload);
 

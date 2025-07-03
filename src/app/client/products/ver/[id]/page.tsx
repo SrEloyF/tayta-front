@@ -446,8 +446,8 @@ export default function DetalleProductoPage() {
                 {producto.es_servicio ? 'Solicitar Servicio' : 'Añadir al Carrito'}
               </Button>
 
-              <Link href={`/client/chats/${producto.id_vendedor}`} passHref>
-                <Button variant="outline" className="w-full">
+              <Link href={`/client/chats?vendedorId=${producto.id_vendedor}`} passHref>
+                <Button variant="blue" className="w-full mt-4">
                   <MessageCircle className="w-5 h-5 mr-2" />
                   Contactar al vendedor
                 </Button>

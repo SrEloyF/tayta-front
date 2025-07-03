@@ -35,6 +35,11 @@ export default function ChatsPage() {
         api.get<Mensaje[]>('/mensajes')
       ]);
 
+      console.log("userRes");
+      
+      console.log(usersRes);
+      
+
       setUsers(usersRes.data);
       setChats(
         chatsRes.data.filter(c => c.idParticipantes.includes(Number(user.id)))

@@ -7,6 +7,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { usePathname } from 'next/navigation';
 import AIChat from '@/components/client/AIChat';
+import { useRef, useEffect } from 'react';
 
 export default function ClientLayout({
   children,
@@ -14,18 +15,18 @@ export default function ClientLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
-  const isChatsPage = pathname === '/client/chats';
+  const isChatsPage = pathname.startsWith('/client/chats');
 
   return (
     <AuthProvider>
       <AuthGuard>
         <div className="flex flex-col min-h-screen">
           <ClientHeader />
-          <main className={`flex-grow ${isChatsPage ? 'pb-0' : 'pb-[100px]'}`}>
+          <main className={`flex-grow ${isChatsPage ? 'pb-0 h-[calc(100vh-111px)]' : 'pb-[100px]'}`}>
             {children}
           </main>
           {!isChatsPage && <ClientFooter />}
-          <AIChat />
+          {!isChatsPage && <AIChat />}
         </div>
       </AuthGuard>
     </AuthProvider>

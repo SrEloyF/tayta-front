@@ -193,6 +193,7 @@ export default function VenderProductos() {
                 categoria: item.categoryName
               }} 
               onDelete={handleDelete}
+              editMode={true}
             />
           ))}
         </div>

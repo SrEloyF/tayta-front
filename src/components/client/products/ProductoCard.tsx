@@ -1,11 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Package, Tag, Star, Eye, ShoppingBag, Sparkles } from 'lucide-react';
+import { Package, Tag, Star, Eye, ShoppingBag, Sparkles, Pencil } from 'lucide-react';
 import { ImageWithAuth } from '@/components/ui/ImageWithAuth';
 import { useRouter } from 'next/navigation';
-
-import { BasicUser } from '@/types';
 
 interface Vendedor {
   id_usuario?: number;
@@ -42,11 +40,12 @@ interface ProductoCardProps {
     fecha_actualizacion?: string;
     es_servicio?: boolean;
   };
+  editMode?: boolean;
   onDelete?: (id: number) => void;
   onAddToCart?: () => void;
 }
 
-const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddToCart }) => {
+const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddToCart, editMode }) => {
   const router = useRouter();
 
   // Manejar caso cuando producto es undefined o tiene datos incompletos
@@ -82,8 +81,8 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
   const getVendedorNombre = () => {
     if (!vendedor) return 'Vendedor no disponible';
     if (typeof vendedor === 'string') return vendedor;
-    return `${vendedor.nombres || ''} ${vendedor.apellidos || ''}`.trim() || 
-           `Vendedor #${vendedor.id_usuario || 'N/A'}`;
+    return `${vendedor.nombres || ''} ${vendedor.apellidos || ''}`.trim() ||
+      `Vendedor #${vendedor.id_usuario || 'N/A'}`;
   };
 
   // Obtener imagen del vendedor
@@ -93,12 +92,12 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
     return vendedor.url_img ? `user_imgs/${vendedor.url_img}` : '/avatar.png';
   };
 
-  const estadoTexto = estado === 'A' ? 
-    (es_servicio ? 'Servicio disponible' : 'Disponible') : 
+  const estadoTexto = estado === 'A' ?
+    (es_servicio ? 'Servicio disponible' : 'Disponible') :
     (es_servicio ? 'Servicio no disponible' : 'Agotado');
-  
-  const stockStatus = stock !== undefined && stock >= 0 
-    ? `${stock} ${stock === 1 ? 'unidad' : 'unidades'} disponible${stock !== 1 ? 's' : ''}` 
+
+  const stockStatus = stock !== undefined && stock >= 0
+    ? `${stock} ${stock === 1 ? 'unidad' : 'unidades'} disponible${stock !== 1 ? 's' : ''}`
     : 'Stock no disponible';
 
   // Paleta de colores dorados y elegantes
@@ -134,17 +133,17 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
     `}>
       {/* Decoración dorada */}
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-200 opacity-80"></div>
-      
+
       {/* Etiquetas de estado y oferta */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
         <span className={`
           px-3 py-1 rounded-full text-xs font-semibold tracking-wide 
-          ${estado === 'A' 
-            ? (es_servicio 
-              ? 'bg-amber-200 text-amber-900 shadow-md' 
-              : 'bg-green-100 text-green-800 shadow-md') 
-            : (es_servicio 
-              ? 'bg-red-200 text-red-900 shadow-md' 
+          ${estado === 'A'
+            ? (es_servicio
+              ? 'bg-amber-200 text-amber-900 shadow-md'
+              : 'bg-green-100 text-green-800 shadow-md')
+            : (es_servicio
+              ? 'bg-red-200 text-red-900 shadow-md'
               : 'bg-red-100 text-red-800 shadow-md')}
         `}>
           {estadoTexto}
@@ -181,7 +180,7 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
       <div className="p-5 flex flex-col flex-grow relative">
         {/* Decoración de fondo sutil */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-amber-50/20 to-transparent opacity-50 dark:opacity-10 pointer-events-none"></div>
-        
+
         <div className="relative z-10">
           <h3 className="
             text-xl font-bold text-gray-900 dark:text-white mb-1 truncate 
@@ -190,7 +189,7 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
           " title={producto.nombre || 'Producto'}>
             {producto.nombre || 'Producto'}
           </h3>
-          
+
           <div className="flex items-center justify-between mb-3">
             <span className="
               text-2xl font-extrabold 
@@ -205,7 +204,7 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
               {typeof rating === 'number' ? rating : 4.5}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-2 text-sm mb-4">
             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
               <Tag className="w-5 h-5 text-amber-500 mr-1" />
@@ -234,37 +233,55 @@ const ProductoCard: React.FC<ProductoCardProps> = ({ producto, onDelete, onAddTo
               </div>
             </div>
           </div>
-          
+
           <div className="mt-auto flex gap-2">
             <Link href={`/client/products/ver/${producto.id_item || producto.id_producto}`} passHref>
               <Button
                 variant="outline"
                 className="
-                  flex-1 flex items-center gap-2 
-                  border-amber-300 text-amber-700 
-                  hover:bg-amber-50 hover:border-amber-400
-                  dark:border-amber-700 dark:text-amber-300
-                  dark:hover:bg-amber-900/30
-                "
+        flex-1 flex items-center gap-2 
+        border-amber-300 text-amber-700 
+        hover:bg-amber-50 hover:border-amber-400
+        dark:border-amber-700 dark:text-amber-300
+        dark:hover:bg-amber-900/30
+      "
               >
                 <Eye className="w-4 h-4" />
                 Ver
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              className="
-                flex items-center gap-2 px-3 py-2 text-sm
-                border-green-300 text-green-700 
-                hover:bg-green-50 hover:border-green-400
-                dark:border-green-700 dark:text-green-300
-                dark:hover:bg-green-900/30
-              "
-              onClick={es_servicio ? handleContratarOrChat : onAddToCart}
-            >
-              <ShoppingBag className="w-5 h-5 min-w-[20px]" />
-              <span>{es_servicio ? 'Contratar' : 'Añadir al carrito'}</span>
-            </Button>
+            {editMode ? (
+              <Link href={`/client/VenderProductos/EditarProducto/${producto.id_producto || producto.id_item}`}>
+                <Button
+                  variant="outline"
+                  className="
+          flex items-center gap-2 px-3 py-2 text-sm
+          border-blue-300 text-blue-700 
+          hover:bg-blue-50 hover:border-blue-400
+          dark:border-blue-700 dark:text-blue-300
+          dark:hover:bg-blue-900/30
+        "
+                >
+                  <Pencil className="w-5 h-5 min-w-[20px]" />
+                  <span>Editar</span>
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                variant="outline"
+                className="
+        flex items-center gap-2 px-3 py-2 text-sm
+        border-green-300 text-green-700 
+        hover:bg-green-50 hover:border-green-400
+        dark:border-green-700 dark:text-green-300
+        dark:hover:bg-green-900/30
+      "
+                onClick={es_servicio ? handleContratarOrChat : onAddToCart}
+              >
+                <ShoppingBag className="w-5 h-5 min-w-[20px]" />
+                <span>{es_servicio ? 'Contratar' : 'Añadir al carrito'}</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>

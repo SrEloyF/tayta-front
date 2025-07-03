@@ -20,12 +20,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem('auth-token');
     const user = localStorage.getItem('user');
     const isAuth = !!token && !!user;
+    /*
     console.log('AuthGuard Verification:', {
       tokenExists: !!token,
       userExists: !!user,
       isAuth,
       pathname
-    });
+    });*/
     const isAuthRoute = ['/auth/login', '/auth/register'].includes(pathname);
     if (!isAuth && !isAuthRoute) {
       router.replace(`/auth/login?redirect=${pathname}`);

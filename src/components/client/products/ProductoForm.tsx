@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect, useState, useMemo } from 'react';
+import { ImageWithAuth } from '@/components/ui/ImageWithAuth';
 
 type Categoria = {
   id_categoria: number;
@@ -21,7 +22,7 @@ type ProductoFormData = {
   id_categoria: string;
   stock: string;
   id_vendedor: number;
-  imagen: FileList;
+  url_img: string;
 };
 
 import { SubmitHandler } from 'react-hook-form';
@@ -65,6 +66,8 @@ export const ProductoForm = ({
 
   const esServicio = watch('es_servicio');
   const [selectedCategory, setSelectedCategory] = useState<string>(initialData?.id_categoria || '');
+  const [imageError, setImageError] = useState(false);
+  const showImage = isEditMode && initialData?.url_img && !imageError;
 
   // Procesamiento optimizado de categorías
   const categoriasValidas = useMemo(() => {
@@ -76,6 +79,15 @@ export const ProductoForm = ({
         descripcion: cat.descripcion?.trim()
       }));
   }, [categorias]);
+
+    useEffect(() => {
+    if (!isEditMode) return;
+    if (initialData?.url_img && !imageError) {
+      console.log("Se obtuvo la imagen: " + initialData?.url_img);
+    } else if (isEditMode && (imageError || !initialData?.url_img)) {
+      console.log("La imagen no existe en el servidor");
+    }
+  }, [isEditMode, initialData?.url_img, imageError]);
 
   // Registrar y sincronizar campo de categoría
   useEffect(() => {
@@ -212,6 +224,28 @@ export const ProductoForm = ({
             <p className="text-red-600 text-xs mt-1">{errors.id_categoria.message}</p>
           )}
         </div>
+        {isEditMode && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Imagen actual:
+            </label>
+            {initialData?.url_img && !imageError ? (
+              <ImageWithAuth
+                imagePath={`item_imgs/${initialData.url_img}`}
+                alt="Imagen actual del producto"
+                className="w-40 h-40 object-contain border rounded mb-2"
+                onError={() => setImageError(true)}
+                onLoadSuccess={() => setImageError(false)}
+                showDefaultOnError={false} // <--- aquí
+              />
+            ) : (
+              <span className="text-gray-500">
+                No hay una imagen seleccionada para este registro
+                {initialData?.url_img ? ` (${initialData.url_img})` : ''}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2 col-span-2">
           <label className="block text-sm font-medium text-gray-700">
@@ -221,8 +255,13 @@ export const ProductoForm = ({
             type="file"
             accept="image/*"
             {...register('imagen', {
-              required: 'La imagen es obligatoria',
-              validate: files => files && files.length > 0 || 'Debes seleccionar una imagen'
+              required: !isEditMode || imageError || !initialData?.url_img
+                ? 'La imagen es obligatoria'
+                : false,
+              validate: files =>
+                !isEditMode || imageError || !initialData?.url_img
+                  ? files && files.length > 0 || 'Debes seleccionar una imagen'
+                  : true
             })}
             className="focus:ring-2 text-black focus:ring-blue-500 focus:border-blue-500 w-full"
           />

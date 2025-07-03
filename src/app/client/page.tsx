@@ -2,9 +2,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { ProductoService } from '@/features/productos/services/ProductoService';
-import { ProductGrid } from '@/components/client/products/ProductGrid';
-import { ServiceCarousel } from '@/components/client/service/ServiceCarousel';
-import { PromoBanner } from '@/components/client/products/PromoBanner';
 import axios from 'axios';
 import { BasicUser } from '@/types';
 import ProductoCard from '@/components/client/products/ProductoCard';

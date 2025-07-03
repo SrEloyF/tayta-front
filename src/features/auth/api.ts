@@ -24,13 +24,13 @@ api.interceptors.request.use((config) => {
       'Content-Type': 'application/json'
     };
   }
-  
+  /*
   // Log de solicitudes para depuración
   console.log('Solicitud Axios:', {
     url: config.url,
     method: config.method,
     headers: config.headers
-  });
+  });*/
   
   return config;
 }, (error) => {
@@ -41,11 +41,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   response => {
     // Log de respuestas para depuración
-    console.log('Respuesta Axios:', {
+    /*console.log('Respuesta Axios:', {
       url: response.config.url,
       status: response.status,
       data: response.data
-    });
+    });*/
     return response;
   },
   error => {

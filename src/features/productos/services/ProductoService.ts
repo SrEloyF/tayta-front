@@ -59,12 +59,12 @@ export const ProductoService = {
         authFetch('https://taytaback.onrender.com/api/productos').then(res => res.json()),
         authFetch('https://taytaback.onrender.com/api/usuarios').then(res => res.json())
       ]);
-
+/*
       console.log('Respuestas recibidas:', {
         items: itemsResponse.length,
         productos: productosResponse.length,
         usuarios: usuariosResponse.length
-      });
+      });*/
 
       return itemsResponse.map((item: any) => {
         const producto = productosResponse.find((p: any) => p.id_producto === item.id_item) || {};
@@ -143,29 +143,39 @@ export const ProductoService = {
 
   async updateItem(id: number, data: any) {
     try {
-      const response = await authFetch(`https://taytaback.onrender.com/api/items/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-        headers: {
-          Authorization: `Bearer ${getToken()}`
-        }
-      });
-      return await response.json();
-    } catch (error) {
-      console.error('Error actualizando ítem:', error);
-      throw error;
-    }
+    const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/items/${id}/fields`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log("item actualizado");
+    console.log(response);
+    
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error actualizando campos del ítem:', error);
+    throw error;
+  }
   },
 
   async updateProducto(id: number, data: any) {
     try {
-      const response = await authFetch(`https://taytaback.onrender.com/api/productos/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-        headers: {
-          Authorization: `Bearer ${getToken()}`
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/productos/${id}/fields`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
       return await response.json();
     } catch (error) {
       console.error('Error actualizando producto:', error);
@@ -175,11 +185,11 @@ export const ProductoService = {
 
   async getCategorias() {
     try {
-      console.log('Intentando obtener categorías desde: https://taytaback.onrender.com/api/categorias');
-      const response = await authFetch('https://taytaback.onrender.com/api/categorias');
+      //console.log('Intentando obtener categorías desde:', `${API_BASE_URL}/api/categorias`);
+      const response = await authFetch('/api/categorias');
       const data = await response.json();
       
-      console.log('Respuesta de categorías:', data);
+      //console.log('Respuesta de categorías:', data);
       return data;
     } catch (error) {
       console.error('Error al obtener categorías:', error);

@@ -4,7 +4,6 @@
 import { FiTrash2, FiPlus, FiMinus } from 'react-icons/fi';
 import { useState } from 'react';
 import { ImageWithAuth } from '@/components/ui/ImageWithAuth';
-import { Toaster, toast } from 'react-hot-toast';
 
 interface CartItemProps {
   item: {
@@ -20,8 +19,6 @@ interface CartItemProps {
   onRemove: (id: string) => void;
   onQuantityChange: (id: string, quantity: number) => void;
 }
-
-
 
 export function CartItem({ item, onRemove, onQuantityChange }: CartItemProps) {
   const [quantity, setQuantity] = useState(item.quantity);
