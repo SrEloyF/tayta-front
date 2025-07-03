@@ -270,7 +270,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Envío</span>
-                  <span className="font-medium">{shipping === 0 ? 'Gratis' : `$${shipping.toFixed(2)}`}</span>
+                  <span className="font-medium">Gratis</span>
                 </div>
                 <div className="border-t border-gray-200 pt-4 mt-4">
                   <div className="flex justify-between">
@@ -280,7 +280,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <PaymentModal isOpen={showModal} onClose={() => setShowModal(false)} />
+              <PaymentModal isOpen={showModal} onClose={() => setShowModal(false)} total={total} />
             </div>
 
             <div className="mt-4 bg-white shadow overflow-hidden sm:rounded-lg p-6">

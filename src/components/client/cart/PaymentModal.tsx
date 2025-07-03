@@ -34,7 +34,7 @@ function validarTarjeta(numero: string) {
   return suma % 10 === 0;
 }
 
-export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function PaymentModal({ isOpen, onClose, total }: { isOpen: boolean; onClose: () => void; total: number }) {
   const [localIsOpen, setLocalIsOpen] = useState(isOpen);
   const [cardNumber, setCardNumber] = useState('');
   const [expiration, setExpiration] = useState('');
@@ -45,7 +45,6 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
 
   const { user } = useAuth();
   const [carritoId, setCarritoId] = useState<number | null>(null);
-  const [total, setTotal] = useState<number>(0);
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://taytaback.onrender.com';
 
   const [paying, setPaying] = useState(false);
@@ -163,6 +162,7 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
 
       // Ahora sí, ejecutar el pago
       const cleanCardNumber = cardNumber.replace(/\s/g, '');
+      console.log('Total final enviado al endpoint:', total);
       const pagoExitoso = await ejecutarPago(cleanCardNumber, expiration, cvc, total);
 
       if (pagoExitoso) {
@@ -350,9 +350,9 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
           const [item] = await itemRes.json();
           totalCarrito += (item.precio || 0) * (prod.cantidad || 1);
         }
-        setTotal(totalCarrito);
       } catch (err) {
-        setTotal(0);
+        console.log("Error al setear datos de la tarjeta");        
+        console.log(err);  
       }
     };
 
