@@ -11,7 +11,7 @@ import {
   ImageOff
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { AuthImage } from '@/components/ui/AuthImage';
+import { ImageWithAuth } from '@/components/ui/ImageWithAuth';
 import { authFetch } from '@/utils/authFetch';
 
 export interface Producto {
@@ -25,6 +25,8 @@ export interface Producto {
   id_categoria: number;
   id_vendedor: number;
   imagen?: string;
+  url_img?: string;
+  es_servicio?: boolean;
   categoria_nombre?: string;
   vendedor_nombre?: string;
 }
@@ -200,21 +202,15 @@ export function ProductsTable({ onEdit }: ProductsTableProps) {
               productos.map((producto) => (
                 <tr key={producto.id_item} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-700 flex items-center justify-center">
+                    <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded-md overflow-hidden">
                       {producto.imagen ? (
-                        <AuthImage
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'https://taytaback.onrender.com'}/api/uploads/item_imgs/${producto.imagen}`}
+                        <ImageWithAuth
+                          imagePath={`item_imgs/${producto.imagen}`}
                           alt={producto.nombre}
-                          width={40}
-                          height={40}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            console.error('Error cargando imagen:', producto.imagen);
-                            e.currentTarget.src = '/default-product.jpg'; // Imagen de respaldo
-                          }}
                         />
                       ) : (
-                        <ImageOff className="h-5 w-5 text-gray-300" />
+                        <ImageOff className="w-6 h-6 text-gray-400" />
                       )}
                     </div>
                   </td>

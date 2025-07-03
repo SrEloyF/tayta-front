@@ -1,15 +1,56 @@
 import axios from 'axios';
 import { LoginFormData, RegisterFormData } from '../../types';
 
-const BASE_URL = 'https://taytaback.onrender.com/api';
+type AxiosResponse<T = any> = {
+  data: T;
+  status: number;
+  statusText: string;
+  headers: any;
+  config: any;
+  request?: any;
+};
 
-interface AuthResponse {
-  token: string;
+type AxiosError = Error & {
+  config: any;
+  code?: string;
+  request?: any;
+  response?: AxiosResponse;
+  isAxiosError: boolean;
+  toJSON: () => object;
+};
+
+const isAxiosError = (error: any): error is AxiosError => {
+  return error.isAxiosError === true;
+};
+
+interface AuthResponseData {
+  accessToken: string;
   refreshToken?: string;
   user: {
     id: string;
     email: string;
+    name?: string;
   };
+}
+
+interface ApiErrorResponse {
+  message?: string;
+  error?: string;
+  fields?: string[];
+}
+
+const BASE_URL = 'https://taytaback.onrender.com/api';
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
+interface AuthResponse {
+  token: string;
+  refreshToken?: string;
+  user: User;
 }
 
 export const AuthService = {
@@ -20,7 +61,11 @@ export const AuthService = {
         baseUrl: BASE_URL
       });
 
-      const response = await axios.post(
+      const response = await axios.post<{
+        accessToken: string;
+        refreshToken?: string;
+        user: User;
+      }>(
         `${BASE_URL}/auth/login`,
         {
           email: credentials.email.trim(),
@@ -36,24 +81,7 @@ export const AuthService = {
 
       console.log('Full server response:', response.data);
 
-      // Ajustar según la estructura real de respuesta
-      const { accessToken, refreshToken } = response.data;
-
-      // Intentar extraer información del token
-      const tokenParts = accessToken.split('.');
-      let user = null;
-      
-      try {
-        const decodedPayload = JSON.parse(atob(tokenParts[1]));
-        user = {
-          id: decodedPayload.id.toString(),
-          email: credentials.email.trim(),
-          name: decodedPayload.name || credentials.email.split('@')[0]
-        };
-      } catch (decodeError) {
-        console.error('Error decoding token:', decodeError);
-        throw new Error('No se pudo procesar la información de usuario');
-      }
+      const { accessToken, refreshToken, user } = response.data;
 
       if (!accessToken || !user) {
         console.error('Invalid server response structure');
@@ -63,27 +91,73 @@ export const AuthService = {
       return {
         token: accessToken,
         refreshToken,
-        user
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name || user.email.split('@')[0]
+        }
       };
     } catch (error) {
-      // Loguear el error completo para más detalles
       if (axios.isAxiosError(error)) {
         console.error('Axios Login Error:', {
           response: error.response?.data,
           status: error.response?.status,
           headers: error.response?.headers
         });
-      } else {
-        console.error('Unexpected Login Error:', error);
+        
+        const errorData = error.response?.data as ApiErrorResponse | undefined;
+        throw new Error(
+          errorData?.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales.'
+        );
       }
       
-      throw new Error('Error al iniciar sesión. Por favor, verifica tus credenciales.');
+      console.error('Unexpected Login Error:', error);
+      throw new Error('Error inesperado al iniciar sesión');
     }
   },
 
   async register(userData: RegisterFormData) {
-    const response = await axios.post(`${BASE_URL}/usuarios`, userData);
-    return response.data;
+    try {
+      const response = await axios.post<AuthResponseData>(
+        `${BASE_URL}/usuarios`, 
+        userData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) => status < 500, // Don't throw for 4xx errors
+        }
+      );
+
+      if (response.status >= 400) {
+        const errorData = response.data as unknown as ApiErrorResponse;
+        const error = new Error(errorData?.message || 'Error en el registro') as Error & { 
+          response?: AxiosResponse<ApiErrorResponse>;
+        };
+        error.response = {
+          ...response,
+          data: errorData
+        };
+        throw error;
+      }
+
+      return response.data;
+    } catch (error: unknown) {
+      if (isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || 'Error en el registro';
+        const errorWithResponse = new Error(errorMessage) as Error & { 
+          response?: AxiosResponse<ApiErrorResponse>;
+        };
+        
+        if (error.response) {
+          errorWithResponse.response = error.response;
+        }
+        
+        throw errorWithResponse;
+      }
+      
+      throw error;
+    }
   },
 
   async adminLogin(credentials: LoginFormData): Promise<AuthResponse> {

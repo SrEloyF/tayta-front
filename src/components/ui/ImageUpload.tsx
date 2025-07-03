@@ -87,7 +87,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       // Upload file
       const formData = new FormData();
       formData.append('imagen', file);
-      const folderName = String(folder || 'item_imgs');
+      const folderName = String(folder || 'items');
       
       try {
         setIsLoading(true);

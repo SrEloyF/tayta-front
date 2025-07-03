@@ -27,14 +27,19 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess
     defaultValues: initialData || { estado: "A" }
   });
   
-  const imagenUrl = watch('imagen') as string;
+  const imagenUrl = watch('url_img') as string;
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Validación para url_img
+  useEffect(() => {
+    register('url_img', { required: 'La imagen es obligatoria' });
+  }, [register]);
+
   // Función para manejar la carga de imágenes
-  const handleImageUpload = useCallback((url: string | undefined) => {
-    setValue('imagen', url || '');
+  const handleImageUpload = useCallback((nombreArchivo: string) => {
+    setValue('url_img', nombreArchivo, { shouldValidate: true });
   }, [setValue]);
 
   useEffect(() => {
@@ -64,102 +69,42 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess
     fetchData();
   }, []);
 
-  const onSubmit = async (values: Partial<Producto>) => {
+  // url_img será manejado por ImageUpload y guardado en el form
+  const onSubmit = async (values: any) => {
     try {
       setIsLoading(true);
       const method = initialData ? "PUT" : "POST";
       const url = initialData ? `/api/items/${initialData.id_item}` : "/api/items";
+      const token = localStorage.getItem('auth-token');
       
-      // Depuración completa
-      console.log('Valores recibidos:', JSON.stringify(values, null, 2));
-      console.log('Tipo de imagen:', typeof values.imagen);
-      console.log('Contenido de imagen:', values.imagen);
-
-      // Preparar datos para enviar
-      const body: Partial<Producto> = { 
-        ...values,
-        es_servicio: false,
-        estado: 'A'
-      };
-
-      // Manejar la imagen
-      let nombreArchivo = initialData?.url_img;
-      
-      // Verificación exhaustiva de la imagen
-      const imagen = values.imagen 
-        ? (values.imagen instanceof FileList 
-          ? values.imagen[0] 
-          : (Array.isArray(values.imagen) && values.imagen.length > 0
-            ? values.imagen[0]
-            : (typeof values.imagen === 'object' && 'name' in values.imagen
-              ? values.imagen
-              : null)))
-        : null;
-
-      console.log('Objeto imagen detectado:', imagen);
-      console.log('Tipo de imagen detectada:', typeof imagen);
-      console.log('Propiedades de imagen:', imagen ? Object.keys(imagen) : 'No hay imagen');
-
-      // Si hay un archivo nuevo para subir
-      if (imagen) {
-        const uploadData = new FormData();
-        uploadData.append('carpeta', 'item_imgs');
-        uploadData.append('imagen', imagen);
-
-        console.log('Detalles de imagen a subir:', {
-          name: imagen.name,
-          type: imagen.type,
-          size: imagen.size
-        });
-
-        const token = localStorage.getItem('auth-token');
-
-        console.log('Iniciando subida de imagen...');
-        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-img?carpeta=item_imgs`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: uploadData
-        });
-
-        console.log('Respuesta de subida:', {
-          status: uploadRes.status,
-          statusText: uploadRes.statusText
-        });
-
-        // Leer el cuerpo de la respuesta para más detalles
-        const responseBody = await uploadRes.text();
-        console.log('Cuerpo de la respuesta:', responseBody);
-
-        if (!uploadRes.ok) {
-          throw new Error(responseBody || 'Error al subir la imagen');
-        }
-
-        let uploadResponseData;
-        try {
-          uploadResponseData = JSON.parse(responseBody);
-        } catch (parseError) {
-          console.error('Error parseando respuesta:', parseError);
-          throw new Error('Respuesta del servidor no es un JSON válido');
-        }
-
-        nombreArchivo = uploadResponseData.nombreArchivo;
-        console.log('Nombre de archivo subido:', nombreArchivo);
-      } 
-      // Si ya es un nombre de archivo de imagen existente
-      else if (typeof values.imagen === 'string') {
-        nombreArchivo = values.imagen;
-        console.log('Usando nombre de archivo existente:', nombreArchivo);
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
       }
 
-      // Agregar url_img al cuerpo
-      body.url_img = nombreArchivo;
+      // Ya no subimos la imagen aquí, solo validamos que url_img esté presente
+      if (!values.url_img) {
+        throw new Error('Debes seleccionar y subir una imagen para el producto');
+      }
 
-      // Eliminar campos undefined
-      Object.keys(body).forEach(key => 
-        body[key as keyof Partial<Producto>] === undefined && delete body[key as keyof Partial<Producto>]
-      );
+      // 2) Preparar datos del ítem
+      const body: any = { 
+        nombre: values.nombre.trim(),
+        descripcion: values.descripcion || 'Sin descripción',
+        precio: parseFloat(values.precio),
+        id_categoria: parseInt(values.id_categoria),
+        id_vendedor: parseInt(values.id_vendedor),
+        es_servicio: false,
+        estado: 'A',
+        url_img: values.url_img,
+        stock: values.stock ? parseInt(values.stock) : 0
+      };
+
+      // Eliminar campos vacíos
+      Object.keys(body).forEach(key => {
+        if (body[key] === undefined || body[key] === '') {
+          delete body[key];
+        }
+      });
 
       const res = await authFetch(url, {
         method,
@@ -187,23 +132,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialData, onSuccess
     <form onSubmit={handleSubmit(onSubmit)} className="bg-gray-900 rounded-xl p-6 shadow-lg border border-yellow-700/10 grid grid-cols-1 gap-4">
       <h2 className="text-lg font-semibold text-yellow-400 mb-2">{initialData ? "Editar" : "Crear"} Producto</h2>
       
-      {/* Campo de imagen */}
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-gray-300 mb-2">Imágenes del producto</h3>
-          <p className="text-xs text-gray-400 mb-3">
-            Sube una imagen principal para tu producto. Formatos: JPG, PNG, WEBP (máx. 5MB)
-          </p>
-          <ImageUpload
-            value={imagenUrl} // Update the value to use watch
-            disabled={isLoading}
-            onChange={handleImageUpload}
-            folder="item_imgs"
-            label="Imagen principal"
-            required={!initialData} // Solo requerido para nuevos productos
-            className="border-2 border-dashed border-gray-700 hover:border-yellow-500/50 transition-colors"
-          />
-        </div>
+      {/* Imagen del producto */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Imagen del producto <span className="text-red-500">*</span>
+        </label>
+        <ImageUpload
+          value={imagenUrl}
+          onChange={(nombreArchivo) => handleImageUpload(nombreArchivo)}
+          folder="item_imgs"
+          required={!initialData} // Solo requerido para nuevos productos
+        />
+        {errors.url_img && (
+          <p className="text-red-600 text-xs mt-1">{errors.url_img.message}</p>
+        )}
       </div>
       
       <div>
