@@ -112,6 +112,7 @@ const ChatSidebar: React.FC<{
 
       <div className="overflow-y-auto max-h-[calc(100vh-250px)]">
         {filteredChats.map(chat => {
+          
           const otherUserId = chat.idParticipantes.find(id => id !== userId);
           const otherUser = users.find(u => u.id_usuario === otherUserId);
 
