@@ -1,8 +1,17 @@
 // src/utils/authFetch.ts
+import Cookies from 'js-cookie';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
-  const token = localStorage.getItem("auth-token");
+  // Try to get token from localStorage first
+  let token = localStorage.getItem("auth-token");
+  
+  // If not found in localStorage, try to get from cookies (for admin)
+  if (!token) {
+    token = Cookies.get('admin_token') || '';
+  }
+  
   const headers = new Headers(init.headers || {});
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);

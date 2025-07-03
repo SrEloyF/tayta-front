@@ -81,20 +81,28 @@ export const AuthService = {
 
       console.log('Full server response:', response.data);
 
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, refreshToken } = response.data;
 
-      if (!accessToken || !user) {
-        console.error('Invalid server response structure');
+      if (!accessToken) {
+        console.error('Invalid server response structure - missing accessToken');
         throw new Error('Respuesta del servidor inválida');
+      }
+
+      // Decode the JWT to get user info
+      const decodedToken = parseJwt(accessToken);
+      
+      if (!decodedToken) {
+        console.error('Failed to decode JWT token');
+        throw new Error('Error al procesar la respuesta del servidor');
       }
 
       return {
         token: accessToken,
         refreshToken,
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name || user.email.split('@')[0]
+          id: decodedToken.id || '',
+          email: decodedToken.email || '',
+          name: decodedToken.name || decodedToken.email?.split('@')[0] || 'Usuario'
         }
       };
     } catch (error) {
