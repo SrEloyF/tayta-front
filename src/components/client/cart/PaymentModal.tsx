@@ -100,14 +100,13 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setError('');
-
     setPaying(true);
 
     const error = validarCampos(name, cardNumber, expiration, cvc, setError);
     if (error) {
       setPaying(false);
       return;
-    };
+    }
 
     if (!carritoId) {
       setError('No se encontró el carrito actual');
@@ -115,51 +114,104 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
       return;
     }
 
-    const cleanCardNumber = cardNumber.replace(/\s/g, '');
-    const pagoExitoso = await ejecutarPago(cleanCardNumber, expiration, cvc, total);
+    try {
+      const token = localStorage.getItem('auth-token');
+      // Buscar productos del carrito
+      const productosRes = await fetch(`${API_BASE_URL}/api/carritos-productos/buscar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          campo: 'id_carrito',
+          valor: carritoId.toString()
+        })
+      });
+      const productos = await productosRes.json();
 
-    if (pagoExitoso) {
-      try {
-        const token = localStorage.getItem('auth-token');
-        const resEstado = await fetch(`${API_BASE_URL}/api/carritos/${carritoId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            campo: 'estado',
-            valor: 'V'
-          })
-        });
+      // Restar stock solo aquí
+      for (const prod of productos) {
+  if (!prod.es_servicio) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/productos/restar-stock/${prod.id_item}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ cantidad: prod.cantidad })
+      });
 
-        // Cambiar fecha_compra
-        const resFecha = await fetch(`${API_BASE_URL}/api/carritos/${carritoId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            campo: 'fecha_compra',
-            valor: new Date().toISOString()
-          })
-        });
-        if (resEstado.ok && resFecha.ok) {
-          toast.success('¡Pago realizado y carrito actualizado!');
-          closeModal();
-          router.push('/client/orders');
-        } else {
-          toast.error('Pago realizado, pero hubo un error al actualizar el carrito.');
-        }
-      } catch (err) {
-        console.log(err);
-        toast.error('Pago realizado, pero hubo un error al actualizar el carrito.');
-      } finally {
-        setPaying(false);
+      // Verificar si la respuesta es exitosa
+      if (!response.ok) {
+        // Si la respuesta no es exitosa, lanza un error con el detalle
+        throw new Error(`Error en la respuesta: ${response.status} ${response.statusText}`);
       }
-    } else {
-      toast.error('No se pudo procesar el pago.');
+
+      // Si necesitas hacer algo con la respuesta, puedes agregarlo aquí
+      const data = await response.json();
+      console.log('Respuesta exitosa:', data);
+
+    } catch (error) {
+      // En caso de que ocurra un error, logueamos los detalles
+      console.error('Error al restar stock del producto', prod.id_item, error);
+    }
+  }
+}
+
+
+      // Ahora sí, ejecutar el pago
+      const cleanCardNumber = cardNumber.replace(/\s/g, '');
+      const pagoExitoso = await ejecutarPago(cleanCardNumber, expiration, cvc, total);
+
+      if (pagoExitoso) {
+        try {
+          const token = localStorage.getItem('auth-token');
+          const resEstado = await fetch(`${API_BASE_URL}/api/carritos/${carritoId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              campo: 'estado',
+              valor: 'V'
+            })
+          });
+
+          // Cambiar fecha_compra
+          const resFecha = await fetch(`${API_BASE_URL}/api/carritos/${carritoId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              campo: 'fecha_compra',
+              valor: new Date().toISOString()
+            })
+          });
+          if (resEstado.ok && resFecha.ok) {
+            toast.success('¡Pago realizado y carrito actualizado!');
+            closeModal();
+            router.push('/client/orders');
+          } else {
+            toast.error('Pago realizado, pero hubo un error al actualizar el carrito.');
+          }
+        } catch (err) {
+          console.log(err);
+          toast.error('Pago realizado, pero hubo un error al actualizar el carrito.');
+        } finally {
+          setPaying(false);
+        }
+      } else {
+        toast.error('No se pudo procesar el pago.');
+      }
+    } catch (error) {
+      console.error('Error al procesar el pago:', error);
+      toast.error('❌ Ocurrió un error al procesar el pago. Inténtalo de nuevo.');
+      setPaying(false);
     }
   };
 
@@ -237,12 +289,15 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
   };
 
 
+  // 1. Solo obtener carrito y productos para mostrar el total (NO restar stock aquí)
   useEffect(() => {
+    if (!localIsOpen) return;
+
     const fetchCarritoYTotal = async () => {
       if (!user?.id) return;
       try {
         const token = localStorage.getItem('auth-token');
-        // 1. Buscar carrito abierto
+        // Buscar carrito abierto
         const carritoRes = await fetch(`${API_BASE_URL}/api/carritos/buscar`, {
           method: 'POST',
           headers: {
@@ -263,7 +318,7 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
 
         setCarritoId(carrito.id_carrito);
 
-        // 2. Buscar productos del carrito
+        // Buscar productos del carrito
         const productosRes = await fetch(`${API_BASE_URL}/api/carritos-productos/buscar`, {
           method: 'POST',
           headers: {
@@ -277,22 +332,7 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
         });
         const productos = await productosRes.json();
 
-        //actualizar si no es_servicio:
-        for (const prod of productos) {
-          if (!prod.es_servicio) {
-            console.log("--->" + prod.es_servicio);
-            await fetch(`${API_BASE_URL}/api/productos/restar-stock/${prod.id_item}`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ cantidad: prod.cantidad })
-            });
-          }
-        }
-
-        // 3. Calcular el total sumando precio * cantidad de cada producto
+        // Calcular el total sumando precio * cantidad de cada producto
         let totalCarrito = 0;
         for (const prod of productos) {
           // Obtener detalles del item
@@ -341,7 +381,7 @@ export default function PaymentModal({ isOpen, onClose }: { isOpen: boolean; onC
       <Toaster />
       <button
         onClick={openModal}
-        className="bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 px-6 rounded-lg shadow-md hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-[1.02]"
+        className="mt-3 bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 px-6 rounded-lg shadow-md hover:from-green-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300 transform hover:scale-[1.02]"
       >
         Proceder al pago
       </button>

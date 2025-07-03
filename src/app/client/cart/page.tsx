@@ -86,13 +86,37 @@ export default function CartPage() {
               })
             });
             const [item] = await itemRes.json();
+
+            let stock = 99;
+            let id_producto = item.id_item ?? null;
+
+            if (!item.es_servicio && id_producto) {
+              const prodStockRes = await fetch(`${API_BASE_URL}/api/productos/buscar`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  campo: 'id_producto',
+                  valor: id_producto
+                })
+              });
+              const prodStockArr = await prodStockRes.json();
+              if (Array.isArray(prodStockArr) && prodStockArr.length > 0) {
+                stock = prodStockArr[0].stock;
+              }
+            } else if (item.stock) {
+              stock = item.stock;
+            }
+
             return {
               id: prod.id_item,
               id_carrito_producto: prod.id_carrito_producto,
               name: item.nombre,
               price: item.precio,
               quantity: prod.cantidad,
-              stock: item.stock ?? 99,
+              stock,
               url_img: item.url_img ?? '',
               es_servicio: item.es_servicio
             };
@@ -183,7 +207,7 @@ export default function CartPage() {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal > 500 ? 0 : 49.99;
+  const shipping = 0;
   const total = subtotal + shipping;
 
   if (loading) {
@@ -256,7 +280,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-        <PaymentModal isOpen={showModal} onClose={() => setShowModal(false)} />
+              <PaymentModal isOpen={showModal} onClose={() => setShowModal(false)} />
             </div>
 
             <div className="mt-4 bg-white shadow overflow-hidden sm:rounded-lg p-6">
